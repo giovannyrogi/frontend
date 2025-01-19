@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';  // Menambahkan computed dari Vue
 import axios from 'axios';
 
 // Ref untuk menyimpan data employees dan kontrak yang dipilih untuk modal
@@ -18,6 +18,9 @@ const editedEmployee = ref({
     no_hp: '',
     alamat: ''
 });
+
+// Ref untuk pencarian
+const searchQuery = ref('');
 
 // Fungsi untuk mengambil data employee beserta kontraknya
 const fetchEmployees = async () => {
@@ -95,11 +98,29 @@ const deleteEmployee = async () => {
 const cancelDelete = () => {
     showDeleteConfirm.value = false;
 };
+
+// Fungsi untuk mencari employee berdasarkan nama atau NIK
+const filteredEmployees = computed(() => {
+    const query = searchQuery.value.toLowerCase();
+    return employees.value.filter(employee => 
+        employee.name.toLowerCase().includes(query) || 
+        employee.nik.toLowerCase().includes(query)
+    );
+});
 </script>
 
 <template>
     <div class="container">
         <h1>List of Employees</h1>
+
+        <!-- Kolom pencarian -->
+        <div class="search-bar">
+            <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="Search by name or NIK" 
+                class="search-input" />
+        </div>
 
         <!-- Tabel untuk menampilkan daftar employee beserta kontraknya -->
         <table class="employee-table">
@@ -115,7 +136,7 @@ const cancelDelete = () => {
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="employee in employees" :key="employee.id">
+                <tr v-for="employee in filteredEmployees" :key="employee.id">
                     <td>{{ employee.id }}</td>
                     <td>{{ employee.name }}</td>
                     <td>{{ employee.nik }}</td>
@@ -174,8 +195,7 @@ const cancelDelete = () => {
         <div v-if="showDeleteConfirm" class="modal">
             <div class="modal-delete-content">
                 <span @click="cancelDelete" class="close-btn">&times;</span>
-                <p>Are you sure you want to delete this employee <span class="delete-employee-name">{{
-                    employees.find(emp => emp.id === employeeToDelete)?.name }}</span>?</p>
+                <p>Are you sure you want to delete this employee <span class="delete-employee-name">{{ employees.find(emp => emp.id === employeeToDelete)?.name }}</span>?</p>
                 <div class="delete-buttons-container">
                     <button @click="cancelDelete" class="cancel-delete-btn">Cancel</button>
                     <button @click="deleteEmployee" class="delete-btn">Yes, Delete</button>
@@ -189,7 +209,20 @@ const cancelDelete = () => {
 .container {
     max-width: 1000px;
     margin: 0 auto;
-    /* padding: 10px; */
+}
+
+.search-bar {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.search-input {
+    padding: 8px;
+    width: 100%;
+    max-width: 300px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
 }
 
 .employee-table {
@@ -211,11 +244,6 @@ td {
 
 th {
     background-color: #f2f2f2;
-}
-
-p {
-    text-align: center;
-    font-size: 18px;
 }
 
 button {
@@ -338,16 +366,11 @@ form input {
     border: 1px solid #ccc;
 }
 
-form button {
-    background-color: #4CAF50;
+button[type="submit"] {
+    background-color: #2980b9;
     color: white;
     border: none;
     border-radius: 4px;
     padding: 10px;
-    cursor: pointer;
-}
-
-form button:hover {
-    background-color: #45a049;
 }
 </style>
