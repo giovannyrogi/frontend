@@ -9,6 +9,15 @@ const showModal = ref(false);
 const showEditModal = ref(false);
 const showDeleteConfirm = ref(false);
 const employeeToDelete = ref(null);
+const showAddModal = ref(false);
+
+// Ref untuk data karyawan baru
+const newEmployee = ref({
+    name: '',
+    nik: '',
+    no_hp: '',
+    alamat: ''
+});
 
 // Ref untuk data employee yang sedang diedit
 const editedEmployee = ref({
@@ -35,6 +44,17 @@ const fetchEmployees = async () => {
 // Panggil fetchEmployees saat komponen pertama kali dimuat
 onMounted(fetchEmployees);
 
+// Fungsi untuk membuka modal tambah data
+const openAddModal = () => {
+    newEmployee.value = { name: '', nik: '', no_hp: '', alamat: '' }; // Reset form
+    showAddModal.value = true;
+};
+
+// Fungsi untuk menutup modal tambah data
+const closeAddModal = () => {
+    showAddModal.value = false;
+};
+
 // Fungsi untuk membuka modal dengan detail kontrak
 const openContractModal = (employee) => {
     selectedEmployee.value = employee;
@@ -55,6 +75,23 @@ const openEditModal = (employee) => {
 // Fungsi untuk menutup modal edit
 const closeEditModal = () => {
     showEditModal.value = false;
+};
+
+
+// Fungsi untuk menambahkan data karyawan
+const addEmployee = async () => {
+    try {
+        // Kirim data karyawan baru ke server
+        const response = await axios.post('http://localhost:80/api/employees', newEmployee.value);
+
+        // Tambahkan data baru ke daftar lokal
+        employees.value.push(response.data);
+
+        alert('Employee added successfully!');
+        closeAddModal(); // Tutup modal tambah data
+    } catch (error) {
+        console.error('Error adding employee:', error);
+    }
 };
 
 // Fungsi untuk mengedit data employee
@@ -102,8 +139,8 @@ const cancelDelete = () => {
 // Fungsi untuk mencari employee berdasarkan nama atau NIK
 const filteredEmployees = computed(() => {
     const query = searchQuery.value.toLowerCase();
-    return employees.value.filter(employee => 
-        employee.name.toLowerCase().includes(query) || 
+    return employees.value.filter(employee =>
+        employee.name.toLowerCase().includes(query) ||
         employee.nik.toLowerCase().includes(query)
     );
 });
@@ -113,13 +150,10 @@ const filteredEmployees = computed(() => {
     <div class="container">
         <h1>List of Employees</h1>
 
-        <!-- Kolom pencarian -->
+        <!-- Kolom pencarian dan tombol tambah data -->
         <div class="search-bar">
-            <input 
-                type="text" 
-                v-model="searchQuery" 
-                placeholder="Search by name or NIK" 
-                class="search-input" />
+            <input type="text" v-model="searchQuery" placeholder="Search by name or NIK" class="search-input" />
+            <button @click="openAddModal" class="add-btn">Add Employee</button>
         </div>
 
         <!-- Tabel untuk menampilkan daftar employee beserta kontraknya -->
@@ -168,6 +202,30 @@ const filteredEmployees = computed(() => {
             </div>
         </div>
 
+        <!-- Modal untuk tambah data employee -->
+        <div v-if="showAddModal" class="modal">
+            <div class="modal-content">
+                <span @click="closeAddModal" class="close-btn">&times;</span>
+                <h2>Add New Employee</h2>
+                <form @submit.prevent="addEmployee">
+                    <label for="new-name">Name</label>
+                    <input type="text" id="new-name" v-model="newEmployee.name" required />
+
+                    <label for="new-nik">NIK</label>
+                    <input type="text" id="new-nik" v-model="newEmployee.nik" required />
+
+                    <label for="new-no_hp">No HP</label>
+                    <input type="number" id="new-no_hp" v-model="newEmployee.no_hp"  required />
+
+                    <label for="new-alamat">Alamat</label>
+                    <input type="text" id="new-alamat" v-model="newEmployee.alamat" required />
+
+                    <button type="submit">Add Employee</button>
+                </form>
+            </div>
+        </div>
+
+
         <!-- Modal Edit Employee -->
         <div v-if="showEditModal" class="modal">
             <div class="modal-content">
@@ -195,7 +253,8 @@ const filteredEmployees = computed(() => {
         <div v-if="showDeleteConfirm" class="modal">
             <div class="modal-delete-content">
                 <span @click="cancelDelete" class="close-btn">&times;</span>
-                <p>Are you sure you want to delete this employee <span class="delete-employee-name">{{ employees.find(emp => emp.id === employeeToDelete)?.name }}</span>?</p>
+                <p>Are you sure you want to delete this employee <span class="delete-employee-name">{{
+                    employees.find(emp => emp.id === employeeToDelete)?.name }}</span>?</p>
                 <div class="delete-buttons-container">
                     <button @click="cancelDelete" class="cancel-delete-btn">Cancel</button>
                     <button @click="deleteEmployee" class="delete-btn">Yes, Delete</button>
@@ -214,7 +273,7 @@ const filteredEmployees = computed(() => {
 .search-bar {
     margin-bottom: 20px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
 .search-input {
@@ -372,5 +431,14 @@ button[type="submit"] {
     border: none;
     border-radius: 4px;
     padding: 10px;
+}
+
+.add-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
 }
 </style>
